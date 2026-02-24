@@ -3,9 +3,10 @@ import { AiController } from '../controllers/ai.controller';
 import { RedTeamService } from '../../domain/ai/red-team.service';
 import { MacroRegimeService } from '../../domain/ai/macro-regime.service';
 import { MarketScraperService } from '../../infrastructure/scraper/market-scraper.service';
+import { AgentService } from '../../domain/ai/agent.service';
 
 @Module({
   controllers: [AiController],
-  providers: [RedTeamService, MacroRegimeService, MarketScraperService],
+  providers: [RedTeamService, MacroRegimeService, MarketScraperService, AgentService],
 })
 export class AiModule {}

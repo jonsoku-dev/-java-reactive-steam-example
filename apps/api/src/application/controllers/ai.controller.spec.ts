@@ -3,6 +3,7 @@ import { AiController } from './ai.controller';
 import { RedTeamService } from '../../domain/ai/red-team.service';
 import { MacroRegimeService } from '../../domain/ai/macro-regime.service';
 import { MarketScraperService } from '../../infrastructure/scraper/market-scraper.service';
+import { AgentService } from '../../domain/ai/agent.service';
 import { Portfolio, RedTeam, MacroRegime } from '@my-org/shared';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -11,6 +12,7 @@ describe('AiController', () => {
   let redTeamService: RedTeamService;
   let macroService: MacroRegimeService;
   let scraperService: MarketScraperService;
+  let agentService: AgentService;
 
   beforeEach(() => {
     // Create mock services
@@ -26,8 +28,12 @@ describe('AiController', () => {
       scrape: vi.fn(),
     } as unknown as MarketScraperService;
 
-    // Manually inject dependencies to bypass Vitest/esbuild decorator metadata limitations
-    controller = new AiController(redTeamService, macroService, scraperService);
+    agentService = {
+      runAnalysis: vi.fn(),
+    } as unknown as AgentService;
+
+    // Manually inject dependencies
+    controller = new AiController(redTeamService, macroService, scraperService, agentService);
   });
 
   it('should run red team analysis', async () => {
@@ -53,5 +59,14 @@ describe('AiController', () => {
     expect(await controller.analyzeMacro({ url })).toBe(expectedResult);
     expect(scraperService.scrape).toHaveBeenCalledWith(url);
     expect(macroService.analyze).toHaveBeenCalledWith(scrapedContent);
+  });
+
+  it('should run agent analysis', async () => {
+    const marketData = 'data';
+    const expectedResult = { marketData };
+    vi.spyOn(agentService, 'runAnalysis').mockResolvedValue(expectedResult);
+
+    expect(await controller.runAgent({ marketData })).toBe(expectedResult);
+    expect(agentService.runAnalysis).toHaveBeenCalledWith(marketData);
   });
 });

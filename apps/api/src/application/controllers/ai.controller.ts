@@ -1,6 +1,7 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { RedTeamService } from '../../domain/ai/red-team.service';
 import { MacroRegimeService } from '../../domain/ai/macro-regime.service';
+import { AgentService } from '../../domain/ai/agent.service';
 import { MarketScraperService } from '../../infrastructure/scraper/market-scraper.service';
 import { Portfolio, RedTeam, MacroRegime } from '@my-org/shared';
 
@@ -10,6 +11,7 @@ export class AiController {
     private readonly redTeamService: RedTeamService,
     private readonly macroService: MacroRegimeService,
     private readonly scraperService: MarketScraperService,
+    private readonly agentService: AgentService,
   ) {}
 
   @Post('red-team')
@@ -21,5 +23,10 @@ export class AiController {
   async analyzeMacro(@Body() body: { url: string }): Promise<MacroRegime> {
     const marketData = await this.scraperService.scrape(body.url);
     return this.macroService.analyze(marketData);
+  }
+
+  @Post('agent/run')
+  async runAgent(@Body() body: { marketData: string }) {
+    return this.agentService.runAnalysis(body.marketData);
   }
 }
