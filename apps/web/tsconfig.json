@@ -1,0 +1,25 @@
+{
+  "files": ["app/**/*.ts", "app/**/*.tsx"],
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": "./",
+    "paths": {
+      "~/*": ["./app/*"]
+    },
+    "types": ["vite/client"]
+  },
+  "include": ["app/**/*", "vite.config.ts"]
+}
