@@ -1,0 +1,20 @@
+
+> @my-org/web@0.0.0 dev /app/apps/web
+> react-router dev
+
+adding `isbot@5` to your package.json, you should commit this change
+Scope: all 4 workspace projects
+../..                                    | Progress: resolved 0, reused 1, downloaded 0, added 0
+../..                                    | Progress: resolved 573, reused 474, downloaded 0, added 0
+ WARN  2 deprecated subdependencies found: glob@10.4.5, node-domexception@1.0.0
+../..                                    | Progress: resolved 710, reused 614, downloaded 0, added 0, done
+
+dependencies:
++ isbot 5.1.35
+
+Done in 2.7s
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+/app/apps/web:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @my-org/web@0.0.0 dev: `react-router dev`
+Command failed with signal "SIGTERM"
