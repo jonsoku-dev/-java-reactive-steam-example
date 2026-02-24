@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Inject } from '@nestjs/common';
 import { RedTeamService } from '../../domain/ai/red-team.service';
 import { MacroRegimeService } from '../../domain/ai/macro-regime.service';
 import { AgentService } from '../../domain/ai/agent.service';
@@ -11,7 +11,8 @@ export class AiController {
     private readonly redTeamService: RedTeamService,
     private readonly macroService: MacroRegimeService,
     private readonly scraperService: MarketScraperService,
-    private readonly agentService: AgentService,
+    // Add explicit injection decorator just in case, though it shouldn't be strictly necessary if standard DI works
+    @Inject(AgentService) private readonly agentService: AgentService,
   ) {}
 
   @Post('red-team')
@@ -27,6 +28,9 @@ export class AiController {
 
   @Post('agent/run')
   async runAgent(@Body() body: { marketData: string }) {
+    if (!this.agentService) {
+        throw new Error('AgentService is not initialized');
+    }
     return this.agentService.runAnalysis(body.marketData);
   }
 }

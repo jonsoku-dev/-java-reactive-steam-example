@@ -8,5 +8,6 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+    include: ['**/*.spec.ts', '**/*.e2e-spec.ts'],
   },
 });
