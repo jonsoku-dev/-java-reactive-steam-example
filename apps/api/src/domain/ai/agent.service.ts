@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { StateGraph, END, CompiledStateGraph } from '@langchain/langgraph';
 import { MacroRegimeService } from './macro-regime.service';
+import { PortfolioService } from './portfolio.service';
 import { RedTeamService } from './red-team.service';
 import { MacroRegime, RedTeam, Portfolio } from '@my-org/shared';
 
@@ -19,6 +20,7 @@ export class AgentService {
 
   constructor(
     private readonly macroService: MacroRegimeService,
+    private readonly portfolioService: PortfolioService,
     private readonly redTeamService: RedTeamService,
   ) {
     this.graph = this.initializeGraph();
@@ -41,21 +43,12 @@ export class AgentService {
       return { macro: result };
     });
 
-    // Node 2: Construct Portfolio (Mocked for now as per plan, but logical step)
+    // Node 2: Construct Portfolio using PortfolioService
     workflow.addNode("portfolio_construction", async (state: AgentState) => {
       this.logger.log("Executing Portfolio Construction Node");
-      // Logic would go here. For now, we deterministically generate based on regime
-      const regime = state.macro?.regime || 'neutral';
-      let allocation: Portfolio;
-
-      if (regime === 'bull') {
-        allocation = { assets: [{ symbol: 'SPY', amount: 80 }, { symbol: 'BND', amount: 20 }], total_value: 10000 };
-      } else if (regime === 'bear') {
-        allocation = { assets: [{ symbol: 'SPY', amount: 20 }, { symbol: 'BND', amount: 80 }], total_value: 10000 };
-      } else {
-        allocation = { assets: [{ symbol: 'SPY', amount: 50 }, { symbol: 'BND', amount: 50 }], total_value: 10000 };
-      }
-      return { portfolio: allocation };
+      if (!state.macro) throw new Error("Macro Regime missing");
+      const result = await this.portfolioService.constructPortfolio(state.macro);
+      return { portfolio: result };
     });
 
     // Node 3: Red Team Stress Test

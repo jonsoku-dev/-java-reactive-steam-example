@@ -6,6 +6,7 @@ import { AiController } from '../src/application/controllers/ai.controller';
 import { AgentService } from '../src/domain/ai/agent.service';
 import { RedTeamService } from '../src/domain/ai/red-team.service';
 import { MacroRegimeService } from '../src/domain/ai/macro-regime.service';
+import { PortfolioService } from '../src/domain/ai/portfolio.service';
 import { MarketScraperService } from '../src/infrastructure/scraper/market-scraper.service';
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 
@@ -22,6 +23,9 @@ describe('AppController (e2e)', () => {
   const mockMacroService = {
     analyze: vi.fn(),
   };
+  const mockPortfolioService = {
+    constructPortfolio: vi.fn(),
+  };
   const mockScraperService = {
     scrape: vi.fn(),
   };
@@ -33,6 +37,7 @@ describe('AppController (e2e)', () => {
         { provide: AgentService, useValue: mockAgentService },
         { provide: RedTeamService, useValue: mockRedTeamService },
         { provide: MacroRegimeService, useValue: mockMacroService },
+        { provide: PortfolioService, useValue: mockPortfolioService },
         { provide: MarketScraperService, useValue: mockScraperService },
       ],
     }).compile();

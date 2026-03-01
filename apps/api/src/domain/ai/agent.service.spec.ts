@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AgentService } from './agent.service';
 import { RedTeamService } from './red-team.service';
 import { MacroRegimeService } from './macro-regime.service';
+import { PortfolioService } from './portfolio.service';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MacroRegime, RedTeam, Portfolio } from '@my-org/shared';
 
@@ -9,6 +10,7 @@ describe('AgentService (LangGraph)', () => {
   let service: AgentService;
   let redTeamService: RedTeamService;
   let macroService: MacroRegimeService;
+  let portfolioService: PortfolioService;
 
   beforeEach(() => {
     redTeamService = {
@@ -19,7 +21,11 @@ describe('AgentService (LangGraph)', () => {
       analyze: vi.fn(),
     } as unknown as MacroRegimeService;
 
-    service = new AgentService(macroService, redTeamService);
+    portfolioService = {
+      constructPortfolio: vi.fn(),
+    } as unknown as PortfolioService;
+
+    service = new AgentService(macroService, portfolioService, redTeamService);
   });
 
   it('should execute full analysis pipeline', async () => {
@@ -30,6 +36,11 @@ describe('AgentService (LangGraph)', () => {
       reasoning: 'good',
     };
 
+    const mockPortfolio: Portfolio = {
+      assets: [{ symbol: 'AAPL', amount: 100 }],
+      total_value: 15000,
+    };
+
     const mockRedTeam: RedTeam = {
       scenarios: [],
       overall_risk_score: 20,
@@ -38,14 +49,14 @@ describe('AgentService (LangGraph)', () => {
     };
 
     vi.spyOn(macroService, 'analyze').mockResolvedValue(mockMacro);
+    vi.spyOn(portfolioService, 'constructPortfolio').mockResolvedValue(mockPortfolio);
     vi.spyOn(redTeamService, 'analyze').mockResolvedValue(mockRedTeam);
 
     const result = await service.runAnalysis('market data');
 
     expect(macroService.analyze).toHaveBeenCalledWith('market data');
-    // We expect portfolio construction logic to happen (mocked inside service for now)
-    // Then red team analysis on the constructed portfolio
-    expect(redTeamService.analyze).toHaveBeenCalled();
+    expect(portfolioService.constructPortfolio).toHaveBeenCalledWith(mockMacro);
+    expect(redTeamService.analyze).toHaveBeenCalledWith(mockPortfolio);
 
     expect(result).toEqual({
       marketData: 'market data',
