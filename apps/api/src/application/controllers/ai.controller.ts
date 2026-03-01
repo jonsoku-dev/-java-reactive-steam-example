@@ -1,14 +1,19 @@
-import { Controller, Post, Get, Body, Inject } from '@nestjs/common';
-import { RedTeamService } from '../../domain/ai/red-team.service';
-import { MacroRegimeService } from '../../domain/ai/macro-regime.service';
-import { AgentService } from '../../domain/ai/agent.service';
-import { MarketScraperService } from '../../infrastructure/scraper/market-scraper.service';
-import { Portfolio, RedTeam, MacroRegime, analysisResults } from '@my-org/shared';
-import { DRIZZLE } from '../../infrastructure/database/database.module';
-import { MySql2Database } from 'drizzle-orm/mysql2';
-import { desc } from 'drizzle-orm';
+import {
+  analysisResults,
+  type MacroRegime,
+  type Portfolio,
+  type RedTeam,
+} from "@my-org/shared";
+import { Body, Controller, Get, Inject, Post } from "@nestjs/common";
+import { desc } from "drizzle-orm";
+import type { MySql2Database } from "drizzle-orm/mysql2";
+import { AgentService } from "../../domain/ai/agent.service";
+import type { MacroRegimeService } from "../../domain/ai/macro-regime.service";
+import type { RedTeamService } from "../../domain/ai/red-team.service";
+import { DRIZZLE } from "../../infrastructure/database/database.module";
+import type { MarketScraperService } from "../../infrastructure/scraper/market-scraper.service";
 
-@Controller('ai')
+@Controller("ai")
 export class AiController {
   constructor(
     private readonly redTeamService: RedTeamService,
@@ -19,28 +24,29 @@ export class AiController {
     @Inject(DRIZZLE) private readonly db: MySql2Database<Record<string, never>>,
   ) {}
 
-  @Post('red-team')
+  @Post("red-team")
   async runRedTeam(@Body() portfolio: Portfolio): Promise<RedTeam> {
     return this.redTeamService.analyze(portfolio);
   }
 
-  @Post('macro-regime')
+  @Post("macro-regime")
   async analyzeMacro(@Body() body: { url: string }): Promise<MacroRegime> {
     const marketData = await this.scraperService.scrape(body.url);
     return this.macroService.analyze(marketData);
   }
 
-  @Post('agent/run')
+  @Post("agent/run")
   async runAgent(@Body() body: { marketData: string }) {
     if (!this.agentService) {
-        throw new Error('AgentService is not initialized');
+      throw new Error("AgentService is not initialized");
     }
     return this.agentService.runAnalysis(body.marketData);
   }
 
-  @Get('history')
+  @Get("history")
   async getHistory() {
-    return this.db.select()
+    return this.db
+      .select()
       .from(analysisResults)
       .orderBy(desc(analysisResults.createdAt))
       .limit(10);

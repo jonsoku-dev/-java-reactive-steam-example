@@ -1,9 +1,9 @@
-import { Global, Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { drizzle } from 'drizzle-orm/mysql2';
-import * as mysql from 'mysql2/promise';
+import { Global, Module } from "@nestjs/common";
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import { drizzle } from "drizzle-orm/mysql2";
+import * as mysql from "mysql2/promise";
 
-export const DRIZZLE = Symbol('drizzle-connection');
+export const DRIZZLE = Symbol("drizzle-connection");
 
 @Global()
 @Module({
@@ -14,8 +14,8 @@ export const DRIZZLE = Symbol('drizzle-connection');
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => {
         const connectionString = configService.get<string>(
-          'DATABASE_URL',
-          'mysql://quant_user:quant_password@localhost:3306/quant_db'
+          "DATABASE_URL",
+          "mysql://quant_user:quant_password@localhost:3306/quant_db",
         );
         const poolConnection = mysql.createPool(connectionString);
         return drizzle(poolConnection);

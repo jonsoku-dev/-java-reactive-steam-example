@@ -1,4 +1,9 @@
-import type { MacroRegime, RedTeam, Portfolio, AnalysisResult } from "@my-org/shared";
+import type {
+  AnalysisResult,
+  MacroRegime,
+  Portfolio,
+  RedTeam,
+} from "@my-org/shared";
 
 const API_BASE_URL = "http://localhost:3000";
 
@@ -12,7 +17,9 @@ export async function fetchMacroRegime(url: string): Promise<MacroRegime> {
   return response.json();
 }
 
-export async function fetchRedTeamAnalysis(portfolio: Portfolio): Promise<RedTeam> {
+export async function fetchRedTeamAnalysis(
+  portfolio: Portfolio,
+): Promise<RedTeam> {
   const response = await fetch(`${API_BASE_URL}/ai/red-team`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

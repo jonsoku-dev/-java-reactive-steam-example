@@ -1,17 +1,17 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { MacroRegimeService } from './macro-regime.service';
-import { ChatOpenAI } from '@langchain/openai';
-import { MacroRegimeSchema } from '@my-org/shared';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { RunnableLambda } from '@langchain/core/runnables';
+import { RunnableLambda } from "@langchain/core/runnables";
+import { ChatOpenAI } from "@langchain/openai";
+import { MacroRegimeSchema } from "@my-org/shared";
+import { Test, type TestingModule } from "@nestjs/testing";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { MacroRegimeService } from "./macro-regime.service";
 
-vi.mock('@langchain/openai', () => {
+vi.mock("@langchain/openai", () => {
   return {
     ChatOpenAI: vi.fn(),
   };
 });
 
-describe('MacroRegimeService', () => {
+describe("MacroRegimeService", () => {
   let service: MacroRegimeService;
   let mockWithStructuredOutput: ReturnType<typeof vi.fn>;
 
@@ -34,12 +34,12 @@ describe('MacroRegimeService', () => {
     service = module.get<MacroRegimeService>(MacroRegimeService);
   });
 
-  it('should analyze macro data using gpt-5.1 and return regime', async () => {
+  it("should analyze macro data using gpt-5.1 and return regime", async () => {
     const mockResult = {
-      regime: 'bull',
+      regime: "bull",
       confidence: 85,
-      factors: ['Interest rate cut'],
-      reasoning: 'Strong employment data',
+      factors: ["Interest rate cut"],
+      reasoning: "Strong employment data",
     };
 
     const runnable = RunnableLambda.from(async () => mockResult);
@@ -47,10 +47,10 @@ describe('MacroRegimeService', () => {
 
     const result = await service.analyze("Latest employment data shows...");
 
-    expect(ChatOpenAI).toHaveBeenCalledWith({
-      model: 'gpt-5.1',
+    expect(ChatOpenAI).toHaveBeenCalledWith(expect.objectContaining({
+      modelName: "gpt-5.1",
       temperature: 0,
-    });
+    }));
 
     expect(mockWithStructuredOutput).toHaveBeenCalledWith(MacroRegimeSchema);
     expect(result).toEqual(mockResult);

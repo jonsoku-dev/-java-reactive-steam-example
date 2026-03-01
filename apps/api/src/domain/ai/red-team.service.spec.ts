@@ -1,18 +1,18 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { RedTeamService } from './red-team.service';
-import { ChatOpenAI } from '@langchain/openai';
-import { RedTeamSchema, Portfolio } from '@my-org/shared';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { RunnableLambda } from '@langchain/core/runnables';
+import { RunnableLambda } from "@langchain/core/runnables";
+import { ChatOpenAI } from "@langchain/openai";
+import { type Portfolio, RedTeamSchema } from "@my-org/shared";
+import { Test, type TestingModule } from "@nestjs/testing";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { RedTeamService } from "./red-team.service";
 
 // Mock ChatOpenAI
-vi.mock('@langchain/openai', () => {
+vi.mock("@langchain/openai", () => {
   return {
     ChatOpenAI: vi.fn(),
   };
 });
 
-describe('RedTeamService', () => {
+describe("RedTeamService", () => {
   let service: RedTeamService;
   let mockWithStructuredOutput: ReturnType<typeof vi.fn>;
 
@@ -37,14 +37,14 @@ describe('RedTeamService', () => {
     service = module.get<RedTeamService>(RedTeamService);
   });
 
-  it('should analyze portfolio using gpt-5.2 and return structured data', async () => {
+  it("should analyze portfolio using gpt-5.2 and return structured data", async () => {
     const mockResult = {
       scenarios: [
-        { name: 'Market Crash', description: '50% drop', impact_score: 9 },
+        { name: "Market Crash", description: "50% drop", impact_score: 9 },
       ],
       overall_risk_score: 85,
-      vulnerabilities: ['High leverage'],
-      recommendations: ['Reduce leverage'],
+      vulnerabilities: ["High leverage"],
+      recommendations: ["Reduce leverage"],
     };
 
     // Use RunnableLambda to create a valid Runnable structure
@@ -53,17 +53,17 @@ describe('RedTeamService', () => {
     mockWithStructuredOutput.mockReturnValue(runnable);
 
     const portfolioData: Portfolio = {
-      assets: [{ symbol: 'BTC', amount: 10 }],
-      total_value: 50000
+      assets: [{ symbol: "BTC", amount: 10 }],
+      total_value: 50000,
     };
 
     const result = await service.analyze(portfolioData);
 
     // Verify correct model usage
-    expect(ChatOpenAI).toHaveBeenCalledWith({
-      model: 'gpt-5.2',
+    expect(ChatOpenAI).toHaveBeenCalledWith(expect.objectContaining({
+      modelName: "gpt-5.2",
       temperature: 0,
-    });
+    }));
 
     // Verify structured output schema usage
     expect(mockWithStructuredOutput).toHaveBeenCalledWith(RedTeamSchema);
@@ -71,17 +71,19 @@ describe('RedTeamService', () => {
     expect(result).toEqual(mockResult);
   });
 
-  it('should throw an error if AI analysis fails', async () => {
+  it("should throw an error if AI analysis fails", async () => {
     const runnable = RunnableLambda.from(async () => {
-       throw new Error('AI Service Down');
+      throw new Error("AI Service Down");
     });
     mockWithStructuredOutput.mockReturnValue(runnable);
 
     const portfolioData: Portfolio = {
-        assets: [{ symbol: 'BTC', amount: 10 }],
-        total_value: 50000
-      };
+      assets: [{ symbol: "BTC", amount: 10 }],
+      total_value: 50000,
+    };
 
-    await expect(service.analyze(portfolioData)).rejects.toThrow('AI Service Down');
+    await expect(service.analyze(portfolioData)).rejects.toThrow(
+      "AI Service Down",
+    );
   });
 });

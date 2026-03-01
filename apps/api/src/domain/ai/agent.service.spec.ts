@@ -1,18 +1,18 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AgentService } from './agent.service';
-import { RedTeamService } from './red-team.service';
-import { MacroRegimeService } from './macro-regime.service';
-import { PortfolioService } from './portfolio.service';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MacroRegime, RedTeam, Portfolio } from '@my-org/shared';
-import { MySql2Database } from 'drizzle-orm/mysql2';
+import type { MacroRegime, Portfolio, RedTeam } from "@my-org/shared";
+import { Test, TestingModule } from "@nestjs/testing";
+import type { MySql2Database } from "drizzle-orm/mysql2";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { AgentService } from "./agent.service";
+import type { MacroRegimeService } from "./macro-regime.service";
+import type { PortfolioService } from "./portfolio.service";
+import type { RedTeamService } from "./red-team.service";
 
-describe('AgentService (LangGraph)', () => {
+describe("AgentService (LangGraph)", () => {
   let service: AgentService;
   let redTeamService: RedTeamService;
   let macroService: MacroRegimeService;
   let portfolioService: PortfolioService;
-  let mockDb: any; // Use a structured mock for Drizzle to avoid 'any' if possible, but complex chain needs careful mocking
+  let mockDb: { insert: ReturnType<typeof vi.fn> }; // Use a structured mock for Drizzle to avoid 'any' if possible, but complex chain needs careful mocking
 
   beforeEach(() => {
     redTeamService = {
@@ -34,19 +34,24 @@ describe('AgentService (LangGraph)', () => {
       }),
     };
 
-    service = new AgentService(macroService, portfolioService, redTeamService, mockDb as unknown as MySql2Database<Record<string, never>>);
+    service = new AgentService(
+      macroService,
+      portfolioService,
+      redTeamService,
+      mockDb as unknown as MySql2Database<Record<string, never>>,
+    );
   });
 
-  it('should execute full analysis pipeline', async () => {
+  it("should execute full analysis pipeline", async () => {
     const mockMacro: MacroRegime = {
-      regime: 'bull',
+      regime: "bull",
       confidence: 90,
-      factors: ['growth'],
-      reasoning: 'good',
+      factors: ["growth"],
+      reasoning: "good",
     };
 
     const mockPortfolio: Portfolio = {
-      assets: [{ symbol: 'AAPL', amount: 100 }],
+      assets: [{ symbol: "AAPL", amount: 100 }],
       total_value: 15000,
     };
 
@@ -57,29 +62,31 @@ describe('AgentService (LangGraph)', () => {
       recommendations: [],
     };
 
-    vi.spyOn(macroService, 'analyze').mockResolvedValue(mockMacro);
-    vi.spyOn(portfolioService, 'constructPortfolio').mockResolvedValue(mockPortfolio);
-    vi.spyOn(redTeamService, 'analyze').mockResolvedValue(mockRedTeam);
+    vi.spyOn(macroService, "analyze").mockResolvedValue(mockMacro);
+    vi.spyOn(portfolioService, "constructPortfolio").mockResolvedValue(
+      mockPortfolio,
+    );
+    vi.spyOn(redTeamService, "analyze").mockResolvedValue(mockRedTeam);
 
-    const result = await service.runAnalysis('market data');
+    const result = await service.runAnalysis("market data");
 
-    expect(macroService.analyze).toHaveBeenCalledWith('market data');
+    expect(macroService.analyze).toHaveBeenCalledWith("market data");
     expect(portfolioService.constructPortfolio).toHaveBeenCalledWith(mockMacro);
     expect(redTeamService.analyze).toHaveBeenCalledWith(mockPortfolio);
 
     // Verify DB insertion
     expect(mockDb.insert).toHaveBeenCalled();
     // Getting the mock values chain
-    const valuesMock = mockDb.insert().values;
+    const valuesMock = (mockDb.insert() as any).values;
     expect(valuesMock).toHaveBeenCalledWith({
-      marketData: 'market data',
+      marketData: "market data",
       macroRegime: mockMacro,
       portfolio: mockPortfolio,
       redTeam: mockRedTeam,
     });
 
     expect(result).toEqual({
-      marketData: 'market data',
+      marketData: "market data",
       macro: mockMacro,
       portfolio: expect.anything(),
       redTeam: mockRedTeam,

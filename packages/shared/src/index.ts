@@ -1,2 +1,2 @@
-export * from "./schemas";
 export * from "./db-types";
+export * from "./schemas";

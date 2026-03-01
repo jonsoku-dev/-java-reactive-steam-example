@@ -1,14 +1,19 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
-import { StateGraph, END, CompiledStateGraph } from '@langchain/langgraph';
-import { MacroRegimeService } from './macro-regime.service';
-import { PortfolioService } from './portfolio.service';
-import { RedTeamService } from './red-team.service';
-import { MacroRegime, RedTeam, Portfolio, analysisResults } from '@my-org/shared';
-import { DRIZZLE } from '../../infrastructure/database/database.module';
-import { MySql2Database } from 'drizzle-orm/mysql2';
+import { END, StateGraph } from "@langchain/langgraph";
+import {
+  analysisResults,
+  type MacroRegime,
+  type Portfolio,
+  type RedTeam,
+} from "@my-org/shared";
+import { Inject, Injectable, Logger } from "@nestjs/common";
+import type { MySql2Database } from "drizzle-orm/mysql2";
+import { DRIZZLE } from "../../infrastructure/database/database.module";
+import type { MacroRegimeService } from "./macro-regime.service";
+import type { PortfolioService } from "./portfolio.service";
+import type { RedTeamService } from "./red-team.service";
 
 // Define the state of our graph
-interface AgentState {
+export interface AgentState {
   marketData: string;
   macro?: MacroRegime;
   portfolio?: Portfolio;
@@ -18,7 +23,7 @@ interface AgentState {
 @Injectable()
 export class AgentService {
   private readonly logger = new Logger(AgentService.name);
-  private graph: CompiledStateGraph<AgentState, Partial<AgentState>, "__start__">;
+  private graph: any;
 
   constructor(
     private readonly macroService: MacroRegimeService,
@@ -29,15 +34,24 @@ export class AgentService {
     this.graph = this.initializeGraph();
   }
 
-  private initializeGraph(): CompiledStateGraph<AgentState, Partial<AgentState>, "__start__"> {
+  private initializeGraph() {
     const workflow = new StateGraph<AgentState>({
       channels: {
-        marketData: { value: (x: string, y: string) => y, default: () => "" },
-        macro: { value: (x: MacroRegime, y: MacroRegime) => y, default: () => undefined },
-        portfolio: { value: (x: Portfolio, y: Portfolio) => y, default: () => undefined },
-        redTeam: { value: (x: RedTeam, y: RedTeam) => y, default: () => undefined },
-      }
-    });
+        marketData: { value: null, default: () => "" },
+        macro: {
+          value: null,
+          default: () => undefined,
+        },
+        portfolio: {
+          value: null,
+          default: () => undefined,
+        },
+        redTeam: {
+          value: null,
+          default: () => undefined,
+        },
+      },
+    } as any);
 
     // Node 1: Analyze Macro Regime
     workflow.addNode("macro_analysis", async (state: AgentState) => {
@@ -50,7 +64,9 @@ export class AgentService {
     workflow.addNode("portfolio_construction", async (state: AgentState) => {
       this.logger.log("Executing Portfolio Construction Node");
       if (!state.macro) throw new Error("Macro Regime missing");
-      const result = await this.portfolioService.constructPortfolio(state.macro);
+      const result = await this.portfolioService.constructPortfolio(
+        state.macro,
+      );
       return { portfolio: result };
     });
 
