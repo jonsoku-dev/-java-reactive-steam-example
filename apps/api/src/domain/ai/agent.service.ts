@@ -1,9 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { StateGraph, END, CompiledStateGraph } from '@langchain/langgraph';
 import { MacroRegimeService } from './macro-regime.service';
 import { PortfolioService } from './portfolio.service';
 import { RedTeamService } from './red-team.service';
-import { MacroRegime, RedTeam, Portfolio } from '@my-org/shared';
+import { MacroRegime, RedTeam, Portfolio, analysisResults } from '@my-org/shared';
+import { DRIZZLE } from '../../infrastructure/database/database.module';
+import { MySql2Database } from 'drizzle-orm/mysql2';
 
 // Define the state of our graph
 interface AgentState {
@@ -22,6 +24,7 @@ export class AgentService {
     private readonly macroService: MacroRegimeService,
     private readonly portfolioService: PortfolioService,
     private readonly redTeamService: RedTeamService,
+    @Inject(DRIZZLE) private readonly db: MySql2Database<Record<string, never>>,
   ) {
     this.graph = this.initializeGraph();
   }
@@ -71,6 +74,23 @@ export class AgentService {
   async runAnalysis(marketData: string): Promise<AgentState> {
     this.logger.log("Starting Agent Workflow...");
     const result = await this.graph.invoke({ marketData });
+
+    // Save to DB
+    try {
+      this.logger.log("Saving analysis result to database...");
+      await this.db.insert(analysisResults).values({
+        marketData: result.marketData,
+        macroRegime: result.macro,
+        portfolio: result.portfolio,
+        redTeam: result.redTeam,
+      });
+      this.logger.log("Analysis result saved successfully.");
+    } catch (error) {
+      this.logger.error("Failed to save analysis result to database", error);
+      // We might choose to throw or just log depending on strictness.
+      // Usually logging is enough if it's purely for history, but we'll let it fail loudly if DB is critical.
+    }
+
     return result;
   }
 }

@@ -5,12 +5,14 @@ import { MacroRegimeService } from './macro-regime.service';
 import { PortfolioService } from './portfolio.service';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MacroRegime, RedTeam, Portfolio } from '@my-org/shared';
+import { MySql2Database } from 'drizzle-orm/mysql2';
 
 describe('AgentService (LangGraph)', () => {
   let service: AgentService;
   let redTeamService: RedTeamService;
   let macroService: MacroRegimeService;
   let portfolioService: PortfolioService;
+  let mockDb: any; // Use a structured mock for Drizzle to avoid 'any' if possible, but complex chain needs careful mocking
 
   beforeEach(() => {
     redTeamService = {
@@ -25,7 +27,14 @@ describe('AgentService (LangGraph)', () => {
       constructPortfolio: vi.fn(),
     } as unknown as PortfolioService;
 
-    service = new AgentService(macroService, portfolioService, redTeamService);
+    // Mock Drizzle insert().values() chain
+    mockDb = {
+      insert: vi.fn().mockReturnValue({
+        values: vi.fn().mockResolvedValue([{ insertId: 1 }]),
+      }),
+    };
+
+    service = new AgentService(macroService, portfolioService, redTeamService, mockDb as unknown as MySql2Database<Record<string, never>>);
   });
 
   it('should execute full analysis pipeline', async () => {
@@ -57,6 +66,17 @@ describe('AgentService (LangGraph)', () => {
     expect(macroService.analyze).toHaveBeenCalledWith('market data');
     expect(portfolioService.constructPortfolio).toHaveBeenCalledWith(mockMacro);
     expect(redTeamService.analyze).toHaveBeenCalledWith(mockPortfolio);
+
+    // Verify DB insertion
+    expect(mockDb.insert).toHaveBeenCalled();
+    // Getting the mock values chain
+    const valuesMock = mockDb.insert().values;
+    expect(valuesMock).toHaveBeenCalledWith({
+      marketData: 'market data',
+      macroRegime: mockMacro,
+      portfolio: mockPortfolio,
+      redTeam: mockRedTeam,
+    });
 
     expect(result).toEqual({
       marketData: 'market data',

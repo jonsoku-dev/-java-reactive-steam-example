@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MarketScraperService } from './market-scraper.service';
 import { chromium, Browser, Page } from 'playwright'; // Import real playwright object to mock
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { REDIS_CLIENT } from '../cache/cache.module';
+import Redis from 'ioredis';
 
 // Mock playwright
 vi.mock('playwright', () => {
@@ -28,9 +30,15 @@ describe('MarketScraperService', () => {
   let service: MarketScraperService;
   let mockBrowser: MockBrowser;
   let mockPage: MockPage;
+  let mockRedis: any;
 
   beforeEach(async () => {
     vi.clearAllMocks();
+
+    mockRedis = {
+      get: vi.fn().mockResolvedValue(null),
+      setex: vi.fn().mockResolvedValue('OK'),
+    };
 
     mockPage = {
       goto: vi.fn(),
@@ -51,20 +59,37 @@ describe('MarketScraperService', () => {
     mockedChromium.launch.mockResolvedValue(mockBrowser as unknown as Browser);
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [MarketScraperService],
+      providers: [
+        MarketScraperService,
+        { provide: REDIS_CLIENT, useValue: mockRedis },
+      ],
     }).compile();
 
     service = module.get<MarketScraperService>(MarketScraperService);
   });
 
-  it('should scrape market data from a given url', async () => {
+  it('should return cached data if available in Redis', async () => {
+    const url = 'https://example.com/finance';
+    const cachedData = '<html><body><h1>Cached News</h1></body></html>';
+    mockRedis.get.mockResolvedValue(cachedData);
+
+    const data = await service.scrape(url);
+
+    expect(mockRedis.get).toHaveBeenCalledWith(`scrape:${url}`);
+    expect(chromium.launch).not.toHaveBeenCalled();
+    expect(data).toBe(cachedData);
+  });
+
+  it('should scrape market data, cache it, and return if not in cache', async () => {
     const url = 'https://example.com/finance';
     const data = await service.scrape(url);
 
+    expect(mockRedis.get).toHaveBeenCalledWith(`scrape:${url}`);
     expect(chromium.launch).toHaveBeenCalled();
     expect(mockBrowser.newPage).toHaveBeenCalled();
     expect(mockPage.goto).toHaveBeenCalledWith(url);
     expect(mockPage.content).toHaveBeenCalled();
+    expect(mockRedis.setex).toHaveBeenCalledWith(`scrape:${url}`, 3600, expect.stringContaining('Stocks go up'));
     expect(data).toContain('Stocks go up');
     expect(mockBrowser.close).toHaveBeenCalled();
   });

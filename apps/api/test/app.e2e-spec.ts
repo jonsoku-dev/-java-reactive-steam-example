@@ -8,6 +8,8 @@ import { RedTeamService } from '../src/domain/ai/red-team.service';
 import { MacroRegimeService } from '../src/domain/ai/macro-regime.service';
 import { PortfolioService } from '../src/domain/ai/portfolio.service';
 import { MarketScraperService } from '../src/infrastructure/scraper/market-scraper.service';
+import { DRIZZLE } from '../src/infrastructure/database/database.module';
+import { REDIS_CLIENT } from '../src/infrastructure/cache/cache.module';
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 
 describe('AppController (e2e)', () => {
@@ -31,6 +33,17 @@ describe('AppController (e2e)', () => {
   };
 
   beforeAll(async () => {
+    const mockDb = {
+      insert: vi.fn().mockReturnValue({
+        values: vi.fn().mockResolvedValue([{ insertId: 1 }]),
+      }),
+    };
+
+    const mockRedis = {
+      get: vi.fn().mockResolvedValue(null),
+      setex: vi.fn().mockResolvedValue('OK'),
+    };
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [AiController],
       providers: [
@@ -39,6 +52,8 @@ describe('AppController (e2e)', () => {
         { provide: MacroRegimeService, useValue: mockMacroService },
         { provide: PortfolioService, useValue: mockPortfolioService },
         { provide: MarketScraperService, useValue: mockScraperService },
+        { provide: DRIZZLE, useValue: mockDb },
+        { provide: REDIS_CLIENT, useValue: mockRedis },
       ],
     }).compile();
 
