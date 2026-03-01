@@ -1,9 +1,12 @@
-import { Controller, Post, Body, Inject } from '@nestjs/common';
+import { Controller, Post, Get, Body, Inject } from '@nestjs/common';
 import { RedTeamService } from '../../domain/ai/red-team.service';
 import { MacroRegimeService } from '../../domain/ai/macro-regime.service';
 import { AgentService } from '../../domain/ai/agent.service';
 import { MarketScraperService } from '../../infrastructure/scraper/market-scraper.service';
-import { Portfolio, RedTeam, MacroRegime } from '@my-org/shared';
+import { Portfolio, RedTeam, MacroRegime, analysisResults } from '@my-org/shared';
+import { DRIZZLE } from '../../infrastructure/database/database.module';
+import { MySql2Database } from 'drizzle-orm/mysql2';
+import { desc } from 'drizzle-orm';
 
 @Controller('ai')
 export class AiController {
@@ -13,6 +16,7 @@ export class AiController {
     private readonly scraperService: MarketScraperService,
     // Add explicit injection decorator just in case, though it shouldn't be strictly necessary if standard DI works
     @Inject(AgentService) private readonly agentService: AgentService,
+    @Inject(DRIZZLE) private readonly db: MySql2Database<Record<string, never>>,
   ) {}
 
   @Post('red-team')
@@ -32,5 +36,13 @@ export class AiController {
         throw new Error('AgentService is not initialized');
     }
     return this.agentService.runAnalysis(body.marketData);
+  }
+
+  @Get('history')
+  async getHistory() {
+    return this.db.select()
+      .from(analysisResults)
+      .orderBy(desc(analysisResults.createdAt))
+      .limit(10);
   }
 }

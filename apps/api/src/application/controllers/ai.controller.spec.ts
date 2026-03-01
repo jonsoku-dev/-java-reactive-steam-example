@@ -14,6 +14,8 @@ describe('AiController', () => {
   let scraperService: MarketScraperService;
   let agentService: AgentService;
 
+  let mockDb: any;
+
   beforeEach(() => {
     // Create mock services
     redTeamService = {
@@ -32,8 +34,18 @@ describe('AiController', () => {
       runAnalysis: vi.fn(),
     } as unknown as AgentService;
 
+    mockDb = {
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([]),
+          })
+        })
+      })
+    };
+
     // Manually inject dependencies
-    controller = new AiController(redTeamService, macroService, scraperService, agentService);
+    controller = new AiController(redTeamService, macroService, scraperService, agentService, mockDb);
   });
 
   it('should run red team analysis', async () => {
@@ -68,5 +80,11 @@ describe('AiController', () => {
 
     expect(await controller.runAgent({ marketData })).toBe(expectedResult);
     expect(agentService.runAnalysis).toHaveBeenCalledWith(marketData);
+  });
+
+  it('should fetch history', async () => {
+    const result = await controller.getHistory();
+    expect(result).toEqual([]);
+    expect(mockDb.select).toHaveBeenCalled();
   });
 });

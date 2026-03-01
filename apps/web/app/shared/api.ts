@@ -1,4 +1,4 @@
-import type { MacroRegime, RedTeam, Portfolio } from "@my-org/shared";
+import type { MacroRegime, RedTeam, Portfolio, AnalysisResult } from "@my-org/shared";
 
 const API_BASE_URL = "http://localhost:3000";
 
@@ -29,5 +29,11 @@ export async function runAgentAnalysis(marketData: string) {
     body: JSON.stringify({ marketData }),
   });
   if (!response.ok) throw new Error("Failed to run agent analysis");
+  return response.json();
+}
+
+export async function fetchHistory(): Promise<AnalysisResult[]> {
+  const response = await fetch(`${API_BASE_URL}/ai/history`);
+  if (!response.ok) throw new Error("Failed to fetch history");
   return response.json();
 }
